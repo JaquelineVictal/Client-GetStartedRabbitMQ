@@ -1,20 +1,20 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Channel, connect, ConsumeMessage } from 'amqplib';
 import { QueueEnum } from 'src/queue.enum';
-import { PublisherService } from '../publisher/publisher.service';
-import { ConsumerRunFn } from './cosumer.interface';
 
 @Injectable()
-export class ConsumerService {
-  private readonly logger = new Logger('MessageQueueConsumerService');
-
+export class ConsumerService implements OnModuleInit {
   constructor(
+    protected queueName: QueueEnum,
+    protected readonly logger: Logger,
     @Inject('CONFIG') private config: string,
-    private publisher: PublisherService,
   ) {}
 
+  onModuleInit() {
+    this.onNewMessage(this.queueName);
+  }
+
   public async onNewMessage(
-    fn: ConsumerRunFn,
     queueName: QueueEnum,
     prefetchQuantity = 1,
   ): Promise<any> {
@@ -29,37 +29,25 @@ export class ConsumerService {
     });
 
     this.logger.log(`Listening to messages on queue ${queueName}`);
-    channel.consume(queueName, (msg) => this.tryConsume(msg, fn, channel), {
+    channel.consume(queueName, (msg) => this.tryConsume(msg, channel), {
       noAck: false,
     });
   }
 
-  private async tryConsume(
-    msg: ConsumeMessage,
-    fn: ConsumerRunFn,
-    channel: Channel,
-  ) {
+  private async tryConsume(msg: ConsumeMessage, channel: Channel) {
     try {
-      await this.consume(msg, fn, channel);
+      await this.consume(msg, channel);
     } catch (err) {
       this.logger.log(`Something went wrong, call The Batman`);
     }
   }
 
-  private async consume(
-    msg: ConsumeMessage,
-    fn: ConsumerRunFn,
-    channel: Channel,
-  ) {
-    const processId = msg.properties.headers['process_id'];
+  private async consume(msg: ConsumeMessage, channel: Channel) {
     const parsedData = JSON.parse(msg.content.toString());
-    console.log({ parsedData });
-    return fn(
-      parsedData,
-      processId,
-      () => this.ack(msg, channel),
-      msg.fields.redelivered,
+    console.log(
+      `Novo pedido (Nº${parsedData.orderId}) recebido. Separe os seguintes itens! ${parsedData.items}`,
     );
+    this.ack(msg, channel);
   }
 
   private ack(msg: ConsumeMessage, channel: Channel) {

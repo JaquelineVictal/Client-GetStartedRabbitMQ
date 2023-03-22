@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ConsumerModule } from './consumer/consumer.module';
 import { RabbitMqModule } from './rabbit-mq/rabbit-mq.module';
 
 @Module({
