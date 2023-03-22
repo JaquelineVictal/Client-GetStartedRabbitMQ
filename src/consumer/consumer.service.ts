@@ -1,14 +1,14 @@
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Channel, connect, ConsumeMessage } from 'amqplib';
 import { QueueEnum } from 'src/queue.enum';
+import { Items, OrderEntity } from './cosumer.interface';
 
 @Injectable()
 export class ConsumerService implements OnModuleInit {
-  constructor(
-    protected queueName: QueueEnum,
-    protected readonly logger: Logger,
-    @Inject('CONFIG') private config: string,
-  ) {}
+  queueName: QueueEnum = QueueEnum.ORDER;
+  logger: Logger = new Logger();
+
+  constructor(@Inject('CONFIG') private config: string) {}
 
   onModuleInit() {
     this.onNewMessage(this.queueName);
@@ -43,14 +43,22 @@ export class ConsumerService implements OnModuleInit {
   }
 
   private async consume(msg: ConsumeMessage, channel: Channel) {
-    const parsedData = JSON.parse(msg.content.toString());
+    const parsedData: OrderEntity = JSON.parse(msg.content.toString());
+    const itemsString = this.formatItemsOrder(parsedData.items);
     console.log(
-      `Novo pedido (Nº${parsedData.orderId}) recebido. Separe os seguintes itens! ${parsedData.items}`,
+      `Novo pedido (Nº${parsedData.orderId}) recebido. Separe os seguintes itens: ${itemsString}`,
     );
     this.ack(msg, channel);
   }
 
   private ack(msg: ConsumeMessage, channel: Channel) {
     channel.ack(msg);
+  }
+  private formatItemsOrder(items: Items[]): string {
+    return items
+      .map((item) => {
+        return `${item.product} => ${item.quantity} unidade(s)`;
+      })
+      .join(', ');
   }
 }

@@ -1,7 +1,9 @@
-export type ConsumerRunFn = (
-  data: any,
-  processId: string,
-  done: AckFunc,
-  redelievered: boolean,
-) => Promise<any>;
-export type AckFunc = () => void;
+export class OrderEntity {
+  orderId: string;
+  items: Items[];
+}
+
+export class Items {
+  product: string;
+  quantity: number;
+}
