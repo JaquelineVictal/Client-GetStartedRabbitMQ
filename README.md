@@ -9,7 +9,7 @@ You can see more in the [official documentation](https://www.rabbitmq.com/docume
 
 ## Scope:
 
-In this project, we use RabbitMQ to be the middle ground between a marktplace and a fictional store. Marktplace publishes a purchase requisition in the queue, and when the store is ready, it consumes the queue and proceeds with the order.
+In this project, we use RabbitMQ to be the middle ground between a marketplace and a fictional store. Marketplace publishes a purchase requisition in the queue, and when the store is ready, it consumes the queue and proceeds with the order.
 <br>
 This producer/consumer concept is very strong in Rabbit, and the sides can change depending on the applicatio
 <br>
