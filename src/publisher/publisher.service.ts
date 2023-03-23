@@ -10,16 +10,6 @@ export class PublisherService implements OnModuleInit {
   async onModuleInit() {
     const connection = await connect(this.config);
     this.channel = await connection.createChannel();
-    await this.createAllQueues();
-  }
-  private async createAllQueues() {
-    for (const queueName of Object.values(QueueEnum)) {
-      await this.channel.assertQueue(queueName, {
-        arguments: {
-          'x-message-deduplication': true,
-        },
-      });
-    }
   }
   public async publish(options: PublishConfig): Promise<boolean> {
     const data = JSON.stringify(options.data);

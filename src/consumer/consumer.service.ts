@@ -1,14 +1,19 @@
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Channel, connect, ConsumeMessage } from 'amqplib';
+import { PublisherService } from 'src/publisher/publisher.service';
 import { QueueEnum } from 'src/queue.enum';
 import { Items, OrderEntity } from './cosumer.interface';
-
+import { setTimeout } from 'timers/promises';
+import { PublishConfig } from 'src/publisher/entities/publisher.entity';
 @Injectable()
 export class ConsumerService implements OnModuleInit {
   queueName: QueueEnum = QueueEnum.ORDER;
   logger: Logger = new Logger();
 
-  constructor(@Inject('CONFIG') private config: string) {}
+  constructor(
+    @Inject('CONFIG') private config: string,
+    private readonly publisherService: PublisherService,
+  ) {}
 
   onModuleInit() {
     this.onNewMessage(this.queueName);
@@ -48,7 +53,23 @@ export class ConsumerService implements OnModuleInit {
     console.log(
       `New order (Nº${parsedData.orderId}) received. Separate the following items: ${itemsString}`,
     );
+    await this.stepsDeliverOrder(parsedData);
     this.ack(msg, channel);
+  }
+
+  private async stepsDeliverOrder(parsedData) {
+    const publishConfigPayment: PublishConfig = {
+      data: `The order Nº${parsedData.orderId} is waiting for payment`,
+      queueName: QueueEnum.NOTIFICATION,
+    };
+    const publishConfigShipping: PublishConfig = {
+      data: `The order Nº${parsedData.orderId} was shipped`,
+      queueName: QueueEnum.NOTIFICATION,
+    };
+    await setTimeout(5000);
+    await this.publisherService.publish(publishConfigPayment);
+    await setTimeout(30000); //Logic to wait for payment confirm
+    await this.publisherService.publish(publishConfigShipping);
   }
 
   private ack(msg: ConsumeMessage, channel: Channel) {
