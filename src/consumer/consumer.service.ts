@@ -46,7 +46,7 @@ export class ConsumerService implements OnModuleInit {
     const parsedData: OrderEntity = JSON.parse(msg.content.toString());
     const itemsString = this.formatItemsOrder(parsedData.items);
     console.log(
-      `Novo pedido (Nº${parsedData.orderId}) recebido. Separe os seguintes itens: ${itemsString}`,
+      `New order (Nº${parsedData.orderId}) received. Separate the following items: ${itemsString}`,
     );
     this.ack(msg, channel);
   }
@@ -57,7 +57,7 @@ export class ConsumerService implements OnModuleInit {
   private formatItemsOrder(items: Items[]): string {
     return items
       .map((item) => {
-        return `${item.product} => ${item.quantity} unidade(s)`;
+        return `${item.product} => ${item.quantity} unit(s)`;
       })
       .join(', ');
   }
